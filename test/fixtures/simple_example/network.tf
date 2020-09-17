@@ -15,7 +15,7 @@
  */
 
 locals {
-  example_name     = "simple-example"
+  example_name = "simple-example"
 }
 
 resource "random_string" "suffix" {

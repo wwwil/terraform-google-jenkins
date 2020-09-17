@@ -22,6 +22,12 @@ variable "region" {
   description = "The region to deploy to"
 }
 
+variable "create_firewall_rules" {
+  description = "If worker firewall rules should be created"
+  default     = false
+  type        = bool
+}
+
 variable "jenkins_instance_name" {
   description = "The name to assign to the Jenkins VM"
   default     = "jenkins"
@@ -34,7 +40,7 @@ variable "jenkins_instance_machine_type" {
 
 variable "jenkins_boot_disk_source_image" {
   description = "The name of the disk image to use as the boot disk for the Jenkins master"
-  default     = "bitnami-jenkins-2-176-2-0-linux-debian-9-x86-64"
+  default     = "bitnami-jenkins-2-204-2-1-linux-debian-9-x86-64"
 }
 
 variable "jenkins_boot_disk_source_image_project" {
@@ -47,7 +53,7 @@ variable "jenkins_instance_zone" {
 }
 
 variable "jenkins_instance_network" {
-  description = "The GCP network to deploy the Jenkins VM in"
+  description = "The GCP network to deploy the Jenkins VM in. The firewall rules will be created in the project which hosts this network."
 }
 
 variable "jenkins_instance_subnetwork" {
@@ -229,3 +235,7 @@ variable "jenkins_jobs" {
   default     = []
 }
 
+variable "jenkins_network_project_id" {
+  description = "The project ID of the Jenkins network"
+  default     = ""
+}

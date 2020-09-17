@@ -17,6 +17,7 @@ Please see the [examples](./examples/) folder.
 
 | Name | Description | Type | Default | Required |
 |------|-------------|:----:|:-----:|:-----:|
+| create\_firewall\_rules | If worker firewall rules should be created | bool | `"false"` | no |
 | gcs\_bucket | The name of an existing GCS bucket to associate with the created service account, allowing build artifacts to be uploaded. Leave blank to skip | string | `""` | no |
 | jenkins\_boot\_disk\_source\_image | The name of the disk image to use as the boot disk for the Jenkins master | string | `"bitnami-jenkins-2-176-2-0-linux-debian-9-x86-64"` | no |
 | jenkins\_boot\_disk\_source\_image\_project | The project within which the disk image to use as the Jenkins master boot disk exists | string | `"bitnami-launchpad"` | no |
@@ -26,12 +27,13 @@ Please see the [examples](./examples/) folder.
 | jenkins\_instance\_additional\_metadata | Additional instance metadata to assign to the Jenkins VM | map(string) | `<map>` | no |
 | jenkins\_instance\_machine\_type | The machine type to provision for Jenkins | string | `"n1-standard-4"` | no |
 | jenkins\_instance\_name | The name to assign to the Jenkins VM | string | `"jenkins"` | no |
-| jenkins\_instance\_network | The GCP network to deploy the Jenkins VM in | string | n/a | yes |
+| jenkins\_instance\_network | The GCP network to deploy the Jenkins VM in. The firewall rules will be created in the project which hosts this network. | string | n/a | yes |
 | jenkins\_instance\_private | Enable private Jenkins instance | string | `false` | no |
 | jenkins\_instance\_subnetwork | The GCP subnetwork to deploy the Jenkins VM in | string | n/a | yes |
 | jenkins\_instance\_tags | Tags to assign to the Jenkins VM | list(string) | `<list>` | no |
 | jenkins\_instance\_zone | The zone to deploy the Jenkins VM in | string | n/a | yes |
 | jenkins\_jobs | A list of Jenkins jobs to configure on the instance | list | `<list>` | no |
+| jenkins\_network\_project\_id | The project ID of the Jenkins network | string | `""` | no |
 | jenkins\_service\_account\_display\_name | The display name of the service account to create for Jenkins VM provisioning | string | `"Jenkins"` | no |
 | jenkins\_service\_account\_name | The name of the service account to create for Jenkins VM provisioning | string | `"jenkins"` | no |
 | jenkins\_workers\_boot\_disk\_size\_gb | The size of Jenkins worker boot disks, in gigabytes | string | `"10"` | no |
@@ -86,6 +88,8 @@ In order to execute this module you must have a Service Account with the followi
 - roles/iam.serviceAccountUser
 - roles/compute.networkAdmin
 
+`roles/compute.networkAdmin` is required on the host project if a shared VPC is used.
+
 ### Enable API's
 In order to operate with the Service Account you must activate the following APIs on the project where the Service Account was created:
 
@@ -109,104 +113,3 @@ The project has the following folders and files:
 - `/variables.tf`: all the variables for the module
 - `/output.tf`: the outputs of the module
 - `/README.md`: this file
-
-## Testing
-
-### Requirements
-- [bundler](https://github.com/bundler/bundler)
-- [terraform-docs](https://github.com/segmentio/terraform-docs/releases) 0.3.0
-- ruby-2.5.x
-
-### Autogeneration of documentation from .tf files
-
-Run `make generate_docs`
-
-### Integration test
-
-Integration tests are run through [test-kitchen](https://github.com/test-kitchen/test-kitchen), [kitchen-terraform](https://github.com/newcontext-oss/kitchen-terraform), and [InSpec](https://github.com/inspec/inspec).
-
-One test-kitchen instance is defined:
-
-- `simple_example`
-
-The test-kitchen instances in `test/fixtures/` wrap identically-named examples in the `examples` directory.
-
-#### Setup
-
-1. Configure the [test fixtures](#test-configuration)
-2. Download a Service Account key with the necessary permissions and put it in the module's root directory with the name `credentials.json`.
-3. Add appropriate variables to your environment
-
-```
-export PROJECT_ID="YOUR_PROJECT_ID"
-CREDENTIALS_FILE="credentials.json"
-export SERVICE_ACCOUNT_JSON=`cat ${CREDENTIALS_FILE}`
-```
-4. Run the testing container in interactive mode:
-
-```
-make docker_run
-```
-
-The module root directory will be loaded into the Docker container at `/cft/workdir/`.
-5. Run kitchen-terraform to test the infrastructure:
-  1. `kitchen create` creates Terraform state and downloads modules, if applicable.
-  2. `kitchen converge` creates the underlying resources. Run `kitchen converge <INSTANCE_NAME>` to create resources for a specific test case.
-  3. `kitchen verify` tests the created infrastructure. Run `kitchen verify <INSTANCE_NAME>` to run a specific test case.
-  4. `kitchen destroy` tears down the underlying resources created by `kitchen converge`. Run `kitchen destroy <INSTANCE_NAME>` to tear down resources for a specific test case.
-
-Alternatively, you can simply run `CREDENTIALS_FILE="credentials.json" make test_integration_docker` to run all the test steps non-interactively.
-
-#### Test configuration
-
-Each test-kitchen instance is configured with a `terraform.tfvars` file in the test fixture directory, e.g. `test/fixtures/simple_example/terraform.tfvars`.
-For convenience, these files have been symlinked to `test/fixtures/shared/terraform.tfvars`.
-Similarly, each test fixture has a `variables.tf` to define these variables, and an `outputs.tf` to facilitate providing necessary information for `inspec` to locate and query against created resources.
-
-Each test-kitchen instance creates a GCP Network and Subnetwork fixture to house resources, and may create any other necessary fixture data as needed.
-
-### Autogeneration of documentation from .tf files
-Run
-```
-make generate_docs
-```
-
-### Linting
-The makefile in this project will lint or sometimes just format any shell,
-Python, golang, Terraform, or Dockerfiles. The linters will only be run if
-the makefile finds files with the appropriate file extension.
-
-All of the linter checks are in the default make target, so you just have to
-run
-
-```
-make -s
-```
-
-The -s is for 'silent'. Successful output looks like this
-
-```
-Running shellcheck
-Running flake8
-Running go fmt and go vet
-Running terraform validate
-Running hadolint on Dockerfiles
-Checking for required files
-Testing the validity of the header check
-..
-----------------------------------------------------------------------
-Ran 2 tests in 0.026s
-
-OK
-Checking file headers
-The following lines have trailing whitespace
-```
-
-The linters are as follows:
-* Shell - shellcheck. Can be found in homebrew
-* Python - flake8. Can be installed with 'pip install flake8'
-* Golang - gofmt. gofmt comes with the standard golang installation. golang
-is a compiled language so there is no standard linter.
-* Terraform - terraform has a built-in linter in the 'terraform validate'
-command.
-* Dockerfiles - hadolint. Can be found in homebrew<Paste>

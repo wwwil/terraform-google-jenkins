@@ -1,5 +1,5 @@
 /**
- * Copyright 2018 Google LLC
+ * Copyright 2019 Google LLC
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,6 +14,31 @@
  * limitations under the License.
  */
 
-terraform {
-  required_version = "~> 0.12.6"
+output "project_id" {
+  value = module.project.project_id
+}
+
+output "sa_key" {
+  value     = google_service_account_key.int_test.private_key
+  sensitive = true
+}
+
+output "sa_email" {
+  value = google_service_account.int_test.email
+}
+
+output "parent_id" {
+  value = var.org_id
+}
+
+output "svpc_host_project_id" {
+  value = module.jenkins_svpc_host_project.project_id
+}
+
+output "svpc_network_name" {
+  value = module.jenkins_network.network_name
+}
+
+output "svpc_subnetwork_name" {
+  value = module.jenkins_network.subnets_names[0]
 }

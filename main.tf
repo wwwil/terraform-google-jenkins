@@ -15,6 +15,10 @@
  */
 
 locals {
+
+  // project could be the same as var.project_id or different in case jenkins instance creating in shared VPC (means network belongs to differnet project)
+  jenkins_network_project_id = coalesce(var.jenkins_network_project_id, var.project_id)
+
   jenkins_metadata = {
     bitnami-base-password  = local.jenkins_password
     status-uptime-deadline = 420
@@ -36,8 +40,11 @@ EOF
 }
 
 resource "random_string" "jenkins_password" {
-  length  = 8
-  special = "false"
+  length      = 8
+  special     = "false"
+  min_numeric = 1
+  min_lower   = 1
+  min_upper   = 1
 }
 
 data "google_compute_image" "jenkins" {
@@ -112,7 +119,7 @@ resource "google_compute_instance" "jenkins" {
 
   network_interface {
     subnetwork         = var.jenkins_instance_subnetwork
-    subnetwork_project = var.project_id
+    subnetwork_project = local.jenkins_network_project_id
 
     dynamic "access_config" {
       for_each = local.jenkins_instance_access_configs
